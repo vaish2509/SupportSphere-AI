@@ -1,0 +1,19 @@
+# Dependency directories
+/ai-ticket-assistant/node_modules
+/ai-ticket-frontend/node_modules
+
+# # Environment variable files
+# /ai-ticket-assistant/.env
+# /ai-ticket-frontend/.env.local
+
+# Build output folder for the frontend
+/ai-ticket-frontend/dist
+
+# Log files
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# System files (optional but good practice)
+.DS_Store
+.vscode/
