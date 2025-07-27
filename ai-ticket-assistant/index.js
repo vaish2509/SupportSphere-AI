@@ -14,13 +14,22 @@ dotenv.config();
 const PORT = process.env.PORT || 3000;
 const app = express();
 
-// --- Corrected CORS Configuration ---
-// This configuration is more explicit to handle complex requests (like those with JSON bodies).
+// --- Final CORS Configuration ---
+// This configuration dynamically works for both local development and live deployment.
+const allowedOrigins = [
+  'http://localhost:5173', // Local frontend development server
+];
+
+// If an APP_URL is set for production (on Render), add it to the list of allowed origins.
+if (process.env.APP_URL) {
+  allowedOrigins.push(process.env.APP_URL);
+}
+
 const corsOptions = {
-  origin: "http://localhost:5173", // Your frontend URL
-  methods: "GET,HEAD,PUT,PATCH,POST,DELETE", // Explicitly allow all common methods
-  preflightContinue: false,
-  optionsSuccessStatus: 204,
+  origin: allowedOrigins,
+  methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
+  credentials: true,
+  optionsSuccessStatus: 200 
 };
 
 app.use(cors(corsOptions));

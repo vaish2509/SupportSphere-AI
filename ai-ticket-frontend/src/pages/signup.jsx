@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
 export default function SignupPage() {
@@ -7,6 +7,12 @@ export default function SignupPage() {
   const [error, setError] = useState(null);
   const navigate = useNavigate();
 
+  // This useEffect hook will run once when the component loads,
+  // ensuring any old error messages are cleared.
+  useEffect(() => {
+    setError(null);
+  }, []);
+
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
@@ -14,7 +20,7 @@ export default function SignupPage() {
   const handleSignup = async (e) => {
     e.preventDefault();
     setLoading(true);
-    setError(null);
+    setError(null); // Clear previous errors on a new attempt
     try {
       const res = await fetch(
         `${import.meta.env.VITE_SERVER_URL}/auth/signup`,
