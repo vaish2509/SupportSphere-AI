@@ -1,82 +1,48 @@
-import { createAgent, gemini } from "@inngest/agent-kit";
+import { GoogleGenerativeAI } from "@google/generative-ai";
+import dotenv from "dotenv";
+
+// Load environment variables from your .env file
+dotenv.config();
 
 const analyzeTicket = async (ticket) => {
-  const supportAgent = createAgent({
-    model: gemini({
-      // Using a standard model name for better compatibility.
-      model: "gemini-1.5-flash",
-      apiKey: process.env.GEMINI_API_KEY,
-    }),
-    name: "AI Ticket Triage Assistant",
-    system: `You are an expert AI assistant that processes technical support tickets. 
-
-Your job is to:
-1. Summarize the issue.
-2. Estimate its priority.
-3. Provide helpful notes and resource links for human moderators.
-4. List relevant technical skills required.
-
-IMPORTANT:
-- Respond with *only* valid raw JSON.
-- Do NOT include markdown, code fences, comments, or any extra formatting.
-- The format must be a raw JSON object.
-
-Repeat: Do not wrap your output in markdown or code fences.`,
-  });
-
-  const response =
-    await supportAgent.run(`You are a ticket triage agent. Only return a strict JSON object with no extra text, headers, or markdown.
-        
-Analyze the following support ticket and provide a JSON object with:
-
-- summary: A short 1-2 sentence summary of the issue.
-- priority: One of "low", "medium", or "high".
-- helpfulNotes: A detailed technical explanation that a moderator can use to solve this issue. Include useful external links or resources if possible.
-- relatedSkills: An array of relevant skills required to solve the issue (e.g., ["React", "MongoDB"]).
-
-Respond ONLY in this JSON format and do not include any other text or markdown in the answer:
-
-{
-"summary": "Short summary of the ticket",
-"priority": "high",
-"helpfulNotes": "Here are useful tips...",
-"relatedSkills": ["React", "Node.js"]
-}
-
----
-
-Ticket information:
-
-- Title: ${ticket.title}
-- Description: ${ticket.description}`);
-
-  // --- Corrected Parsing Logic ---
-  // The raw output from the agent is a string.
-  const raw = response.output;
-
-  if (!raw || typeof raw !== "string") {
-    console.error("AI response is not a valid string:", response);
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) {
+    console.error("❌ ERROR: GEMINI_API_KEY not found.");
     return null;
   }
 
   try {
-    // First, try to parse directly, assuming the AI followed instructions.
-    return JSON.parse(raw);
-  } catch (e) {
-    // If direct parsing fails, try to extract from markdown fences as a fallback.
-    console.log("Direct JSON parsing failed, trying to extract from markdown.");
-    try {
-      const match = raw.match(/```json\s*([\s\S]*?)\s*```/i);
-      if (match && match[1]) {
-        return JSON.parse(match[1]);
-      }
-      // If no match, it's an unrecoverable error.
-      throw new Error("No JSON found in markdown fences.");
-    } catch (e2) {
-      console.error("Failed to parse JSON from AI response:", e2.message);
-      console.error("Raw AI Response:", raw);
-      return null;
-    }
+    const genAI = new GoogleGenerativeAI(apiKey);
+    // This configuration tells the model to output a JSON object.
+    const model = genAI.getGenerativeModel({
+      model: "gemini-1.5-flash",
+      generationConfig: {
+        response_mime_type: "application/json",
+      },
+    });
+
+    const prompt = `
+      You are an expert ticket analysis system. Analyze the following support ticket.
+      
+      Ticket Title: ${ticket.title}
+      Ticket Description: ${ticket.description}
+
+      Provide a JSON object with the following keys:
+      - "priority": A string, either "low", "medium", or "high".
+      - "helpfulNotes": A string containing a detailed technical explanation for the moderator.
+      - "relatedSkills": An array of strings with relevant skills (e.g., ["React", "MongoDB"]).
+    `;
+
+    const result = await model.generateContent(prompt);
+    const response = await result.response;
+    const jsonString = response.text();
+
+    // Because we requested JSON, we can parse it directly.
+    return JSON.parse(jsonString);
+
+  } catch (error) {
+    console.error("❌ Error analyzing ticket with Gemini:", error.message);
+    return null;
   }
 };
 

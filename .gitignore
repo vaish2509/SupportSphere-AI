@@ -2,9 +2,9 @@
 /ai-ticket-assistant/node_modules
 /ai-ticket-frontend/node_modules
 
-# # Environment variable files
-# /ai-ticket-assistant/.env
-# /ai-ticket-frontend/.env.local
+# Environment variable files
+/ai-ticket-assistant/.env
+/ai-ticket-frontend/.env.local
 
 # Build output folder for the frontend
 /ai-ticket-frontend/dist

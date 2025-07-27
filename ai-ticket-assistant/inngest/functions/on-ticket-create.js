@@ -12,7 +12,6 @@ export const onTicketCreated = inngest.createFunction(
     try {
       const { ticketId } = event.data;
 
-      // Step 1: Fetch the ticket from the database.
       const ticket = await step.run("fetch-ticket-by-id", async () => {
         const ticketObject = await Ticket.findById(ticketId);
         if (!ticketObject) {
@@ -21,41 +20,40 @@ export const onTicketCreated = inngest.createFunction(
         return ticketObject;
       });
 
-      // Step 2: Call the AI agent directly.
-      // The agent.run() call inside analyzeTicket is already an Inngest step,
-      // so we don't wrap it in another step.run().
       const aiResponse = await analyzeTicket(ticket);
 
-      // Step 3: Update ticket, find a moderator, and assign them.
       const moderator = await step.run("process-and-assign", async () => {
         let assignedUser = null;
 
-        // First, update the ticket with the AI's analysis.
         if (aiResponse && aiResponse.relatedSkills) {
           await Ticket.findByIdAndUpdate(ticket._id, {
-            priority: !["low", "medium", "high"].includes(aiResponse.priority)
-              ? "medium"
-              : aiResponse.priority,
+            priority: aiResponse.priority,
             helpfulNotes: aiResponse.helpfulNotes,
             status: "IN_PROGRESS",
             relatedSkills: aiResponse.relatedSkills,
           });
 
-          // Now, find a moderator with the required skills.
-          assignedUser = await User.findOne({
-            role: "moderator",
-            skills: {
-              $in: aiResponse.relatedSkills.map(skill => new RegExp(skill, 'i'))
-            },
-          });
+          // --- Corrected Skill Matching Logic ---
+          // Creates a case-insensitive regex pattern from the AI's skills.
+          // This will match "Database" even if the AI says "Database Administration".
+          const skillRegex = aiResponse.relatedSkills.map(
+            (skill) => new RegExp(skill, "i")
+          );
+
+          if (skillRegex.length > 0) {
+            assignedUser = await User.findOne({
+              role: "moderator",
+              skills: { $in: skillRegex },
+            });
+          }
+          // --- End of Correction ---
         }
-        
+
         // If no skilled moderator is found, assign to any admin.
         if (!assignedUser) {
           assignedUser = await User.findOne({ role: "admin" });
         }
 
-        // Finally, update the ticket with the assignment.
         await Ticket.findByIdAndUpdate(ticket._id, {
           assignedTo: assignedUser?._id || null,
         });
@@ -63,7 +61,6 @@ export const onTicketCreated = inngest.createFunction(
         return assignedUser;
       });
 
-      // Step 4: Send an email notification if a moderator was assigned.
       await step.run("send-assignment-email", async () => {
         if (moderator) {
           const subject = `New Ticket Assigned: "${ticket.title}"`;
@@ -75,7 +72,7 @@ export const onTicketCreated = inngest.createFunction(
       return { success: true, message: "Ticket processed successfully." };
     } catch (err) {
       console.error("❌ Error in on-ticket-created function:", err.message);
-      throw err; // Re-throw to allow Inngest to handle retries.
+      throw err;
     }
   }
 );
