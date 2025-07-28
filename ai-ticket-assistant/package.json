@@ -3,19 +3,16 @@
   "version": "1.0.0",
   "main": "index.js",
   "type": "module",
-  
   "scripts": {
-  "dev": "nodemon index.js",
-  "inngest-dev": "npx inngest-cli@latest dev",
-  "start": "npx concurrently \"node index.js\" \"inngest-cli serve\""
-},
-
+    "dev": "nodemon index.js",
+    "inngest-dev": "npx inngest-cli@latest dev",
+    "start": "npx concurrently \"node index.js\" \"inngest serve\""
+  },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "description": "",
   "devDependencies": {
-    "inngest-cli": "^1.11.0",
     "nodemon": "^3.1.10"
   },
   "dependencies": {
@@ -27,6 +24,7 @@
     "dotenv": "^16.5.0",
     "express": "^5.1.0",
     "inngest": "^3.38.0",
+    "inngest-cli": "^1.11.0",
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.15.1",
     "nodemailer": "^7.0.3"
