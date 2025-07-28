@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "nodemon index.js",
     "inngest-dev": "npx inngest-cli@latest dev",
-    "start": "npx concurrently \"node index.js\" \"inngest serve\""
+    "start": "npx concurrently \"node index.js\" \"inngest-cli serve\""
   },
   "keywords": [],
   "author": "",
@@ -18,7 +18,7 @@
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
     "@inngest/agent-kit": "^0.8.0",
-    "bcrypt": "^6.0.0",
+    "bcryptjs": "^2.4.3",
     "concurrently": "^9.2.0",
     "cors": "^2.8.5",
     "dotenv": "^16.5.0",
@@ -26,6 +26,7 @@
     "inngest": "^3.38.0",
     "inngest-cli": "^1.11.0",
     "jsonwebtoken": "^9.0.2",
+    "mongodb": "6.16.0",
     "mongoose": "^8.15.1",
     "nodemailer": "^7.0.3"
   }
