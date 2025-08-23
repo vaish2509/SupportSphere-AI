@@ -20,9 +20,9 @@ const allowedOrigins = [
   'http://localhost:5173', // Local frontend development server
 ];
 
-// If an APP_URL is set for production (on Render), add it to the list of allowed origins.
-if (process.env.APP_URL) {
-  allowedOrigins.push(process.env.APP_URL);
+// If a FRONTEND_URL is set for production (on Vercel), add it to the list of allowed origins.
+if (process.env.FRONTEND_URL) {
+  allowedOrigins.push(process.env.FRONTEND_URL);
 }
 
 const corsOptions = {
