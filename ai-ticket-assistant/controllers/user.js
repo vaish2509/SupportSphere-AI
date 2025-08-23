@@ -1,4 +1,4 @@
-import bcrypt from "bcryptjs"; // Changed from 'bcrypt' to 'bcryptjs'
+import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import User from "../models/user.js";
 import { inngest } from "../inngest/client.js";
