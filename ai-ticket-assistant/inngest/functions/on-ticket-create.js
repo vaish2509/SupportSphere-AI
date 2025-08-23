@@ -24,9 +24,10 @@ export const onTicketCreated = inngest.createFunction(
 
       const moderator = await step.run("process-and-assign", async () => {
         let assignedUser = null;
+        const updatePayload = {};
 
         if (aiResponse && aiResponse.relatedSkills) {
-          await Ticket.findByIdAndUpdate(ticket._id, {
+          Object.assign(updatePayload, {
             priority: aiResponse.priority,
             helpfulNotes: aiResponse.helpfulNotes,
             status: "IN_PROGRESS",
@@ -54,9 +55,8 @@ export const onTicketCreated = inngest.createFunction(
           assignedUser = await User.findOne({ role: "admin" });
         }
 
-        await Ticket.findByIdAndUpdate(ticket._id, {
-          assignedTo: assignedUser?._id || null,
-        });
+        updatePayload.assignedTo = assignedUser?._id || null;
+        await Ticket.findByIdAndUpdate(ticket._id, updatePayload);
 
         return assignedUser;
       });
