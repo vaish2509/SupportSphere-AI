@@ -62,11 +62,10 @@ export const getTicket = async (req, res) => {
     let ticket;
 
     if (user.role !== "user") {
-      ticket = await Ticket.findById(req.params.id).populate("assignedTo", [
-        "email",
-        "_id",
-      ]);
+      // Admins and moderators can view any ticket
+      ticket = await Ticket.findById(req.params.id).populate("assignedTo", "email _id");
     } else {
+      // A regular user can only view a ticket they created
       ticket = await Ticket.findOne({
         createdBy: user._id,
         _id: req.params.id,
@@ -74,7 +73,7 @@ export const getTicket = async (req, res) => {
     }
 
     if (!ticket) {
-      return res.status(404).json({ message: "Ticket not found" });
+      return res.status(404).json({ message: "Ticket not found or you do not have permission to view it." });
     }
     return res.status(200).json({ ticket });
   } catch (error) {
@@ -100,7 +99,7 @@ export const updateTicketStatus = async (req, res) => {
     // Only allow admins or the assigned moderator to change the status
     if (
       user.role !== "admin" &&
-      ticket.assignedTo?.toString() !== user._id
+      ticket.assignedTo?.toString() !== user._id.toString()
     ) {
       return res
         .status(403)

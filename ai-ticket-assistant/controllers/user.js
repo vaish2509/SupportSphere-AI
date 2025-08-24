@@ -64,44 +64,62 @@ export const login = async (req, res) => {
 };
 
 // ... (rest of the file remains the same)
-export const logout = async (req, res) => {
-  // This is a placeholder. JWT logout is handled client-side.
-  res.json({ message: "Logout endpoint hit" });
+export const logout = (req, res) => {
+  // For JWT-based auth, logout is primarily a client-side operation where
+  // the token is deleted from localStorage or cookies. This endpoint is
+  // provided for completeness and can be used to trigger server-side
+  // cleanup if needed in the future (e.g., with a token blocklist).
+  res.status(200).json({ message: "Logout successful" });
 };
 
 export const updateUser = async (req, res) => {
-  const { skills = [], role, email } = req.body;
+  const { skills, role, email } = req.body;
   try {
-    if (req.user?.role !== "admin") {
-      return res.status(403).json({ error: "Forbidden" });
+    if (req.user.role !== "admin") {
+      return res
+        .status(403)
+        .json({ error: "Forbidden: You do not have permission to perform this action." });
+    }
+    if (!email) {
+      return res.status(400).json({ error: "User email is required." });
     }
     const user = await User.findOne({ email });
     if (!user) {
       return res.status(404).json({ error: "User not found" });
     }
 
-    await User.updateOne(
-      { email },
-      { 
-        skills: skills.length ? skills : user.skills, 
-        role: role || user.role 
-      }
-    );
+    // Build the update object to only change provided fields
+    const updateFields = {};
+    if (role) updateFields.role = role;
+    // Allows clearing skills by passing an empty array
+    if (typeof skills !== "undefined") updateFields.skills = skills;
+
+    if (Object.keys(updateFields).length === 0) {
+      return res.status(400).json({ error: "No fields to update were provided." });
+    }
+
+    await User.updateOne({ email }, { $set: updateFields });
     return res.json({ message: "User updated successfully" });
   } catch (error) {
-    res.status(500).json({ error: "Update failed", details: error.message });
+    console.error("Update User Error:", error);
+    res
+      .status(500)
+      .json({ error: "An unexpected error occurred while updating the user." });
   }
 };
 
 export const getUsers = async (req, res) => {
   try {
     if (req.user.role !== "admin") {
-      return res.status(403).json({ error: "Forbidden" });
+      return res
+        .status(403)
+        .json({ error: "Forbidden: You do not have permission to perform this action." });
     }
 
     const users = await User.find().select("-password");
     return res.json(users);
   } catch (error) {
-    res.status(500).json({ error: "Fetching users failed", details: error.message });
+    console.error("Get Users Error:", error);
+    res.status(500).json({ error: "An unexpected error occurred while fetching users." });
   }
 };

@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useEffect, useState, useCallback } from "react";
+import { Link, useParams } from "react-router-dom";
 import ReactMarkdown from "react-markdown";
 
 export default function TicketDetailsPage() {
@@ -12,7 +12,7 @@ export default function TicketDetailsPage() {
   const token = localStorage.getItem("token");
   const user = JSON.parse(localStorage.getItem("user"));
 
-  const fetchTicket = async () => {
+  const fetchTicket = useCallback(async () => {
     try {
       setLoading(true);
       const res = await fetch(
@@ -35,11 +35,31 @@ export default function TicketDetailsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [id, token]);
 
   useEffect(() => {
     fetchTicket();
-  }, [id]);
+  }, [fetchTicket]);
+
+  // --- NEW POLLING LOGIC ---
+  useEffect(() => {
+    // If the ticket is loaded and is in the initial pending state, start polling.
+    if (ticket && ticket.status === "PENDING") {
+      const intervalId = setInterval(() => {
+        console.log("Polling for ticket updates...");
+        fetchTicket(); // fetchTicket is now stable thanks to useCallback
+      }, 5000); // Poll every 5 seconds
+
+      // If the ticket status is no longer pending, clear the interval.
+      // This check is inside the effect to re-evaluate when `ticket` changes.
+      if (ticket.status !== "PENDING") {
+        clearInterval(intervalId);
+      }
+
+      // Cleanup function to clear the interval when the component unmounts.
+      return () => clearInterval(intervalId);
+    }
+  }, [ticket, fetchTicket]); // Rerun this effect if the ticket object or fetchTicket function changes.
 
   // --- NEW FUNCTION TO HANDLE STATUS UPDATE ---
   const handleUpdateStatus = async (newStatus) => {
