@@ -16,7 +16,7 @@ export default function TicketDetailsPage() {
     try {
       setLoading(true);
       const res = await fetch(
-        `${import.meta.env.VITE_SERVER_URL}/tickets/${id}`,
+        `${import.meta.env.VITE_SERVER_URL}/api/tickets/${id}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -45,7 +45,7 @@ export default function TicketDetailsPage() {
   const handleUpdateStatus = async (newStatus) => {
     try {
       const res = await fetch(
-        `${import.meta.env.VITE_SERVER_URL}/tickets/${id}/status`,
+        `${import.meta.env.VITE_SERVER_URL}/api/tickets/${id}/status`,
         {
           method: "PATCH",
           headers: {

@@ -64,7 +64,15 @@ export const onTicketCreated = inngest.createFunction(
       await step.run("send-assignment-email", async () => {
         if (moderator) {
           const subject = `New Ticket Assigned: "${ticket.title}"`;
-          const message = `Hi ${moderator.email},\n\nA new ticket has been assigned to you.\n\nTitle: ${ticket.title}\nPriority: ${aiResponse?.priority || 'Not set'}\n\nPlease log in to view the details.`;
+          const message = `Hi ${moderator.email},
+
+A new ticket has been assigned to you.
+
+Title: ${ticket.title}
+Priority: ${aiResponse?.priority || 'Not set'}
+AI Notes: ${aiResponse?.helpfulNotes || 'N/A'}
+
+Please log in to view the details.`;
           await sendMail(moderator.email, subject, message);
         }
       });
