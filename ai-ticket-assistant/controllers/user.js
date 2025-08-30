@@ -3,6 +3,13 @@ import jwt from "jsonwebtoken";
 import User from "../models/user.js";
 import { inngest } from "../inngest/client.js";
 
+// Helper function to generate a JWT
+const generateToken = (user) => {
+  return jwt.sign({ _id: user._id, role: user.role }, process.env.JWT_SECRET, {
+    expiresIn: "1d", // Token will expire in 1 day
+  });
+};
+
 export const signup = async (req, res) => {
   const { email, password, skills = [] } = req.body;
   try {
@@ -22,12 +29,7 @@ export const signup = async (req, res) => {
       },
     });
 
-    const token = jwt.sign(
-      { _id: user._id, role: user.role },
-      process.env.JWT_SECRET,
-      { expiresIn: "1d" } // Token will expire in 1 day
-    );
-
+    const token = generateToken(user);
     const { password: _, ...userWithoutPassword } = user.toObject();
     res.status(201).json({ user: userWithoutPassword, token });
   } catch (error) {
@@ -51,12 +53,7 @@ export const login = async (req, res) => {
       return res.status(401).json({ error: "Invalid credentials" });
     }
 
-    const token = jwt.sign(
-      { _id: user._id, role: user.role },
-      process.env.JWT_SECRET,
-      { expiresIn: "1d" } // Token will expire in 1 day
-    );
-
+    const token = generateToken(user);
     const { password: _, ...userWithoutPassword } = user.toObject();
     res.json({ user: userWithoutPassword, token });
   } catch (error) {

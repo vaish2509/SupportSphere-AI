@@ -21,9 +21,6 @@ export const createTicket = async (req, res) => {
       name: "ticket/created",
       data: {
         ticketId: newTicket._id.toString(),
-        title,
-        description,
-        createdBy: req.user._id.toString(),
       },
     });
     return res.status(201).json({

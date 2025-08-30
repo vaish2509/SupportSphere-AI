@@ -22,37 +22,52 @@ export const onTicketCreated = inngest.createFunction(
 
       const aiResponse = await analyzeTicket(ticket);
 
-      const moderator = await step.run("process-and-assign", async () => {
+      const assignee = await step.run("process-and-assign", async () => {
         let assignedUser = null;
-        const updatePayload = {};
+        // Set default values and mark the ticket as in progress immediately.
+        // This makes the process more resilient if AI analysis fails.
+        const updatePayload = {
+          priority: "medium", // Default priority
+          status: "IN_PROGRESS",
+        };
 
-        if (aiResponse && aiResponse.relatedSkills) {
+        // If AI analysis was successful, overwrite defaults with the AI's response.
+        if (aiResponse) {
           Object.assign(updatePayload, {
             priority: aiResponse.priority,
             helpfulNotes: aiResponse.helpfulNotes,
-            status: "IN_PROGRESS",
             relatedSkills: aiResponse.relatedSkills,
           });
 
-          // --- Corrected Skill Matching Logic ---
-          // Creates a case-insensitive regex pattern from the AI's skills.
-          // This will match "Database" even if the AI says "Database Administration".
-          const skillRegex = aiResponse.relatedSkills.map(
-            (skill) => new RegExp(skill, "i")
-          );
+          if (aiResponse.relatedSkills?.length > 0) {
+            // Creates a case-insensitive regex pattern from the AI's skills.
+            // This will match "Database" even if the AI says "Database Administration".
+            const skillRegex = aiResponse.relatedSkills.map(
+              (skill) => new RegExp(skill, "i")
+            );
 
-          if (skillRegex.length > 0) {
-            assignedUser = await User.findOne({
+            const potentialModerators = await User.find({
               role: "moderator",
               skills: { $in: skillRegex },
             });
+            if (potentialModerators.length > 0) {
+              // Pick a random moderator from the list of those with matching skills
+              assignedUser =
+                potentialModerators[
+                  Math.floor(Math.random() * potentialModerators.length)
+                ];
+            }
           }
-          // --- End of Correction ---
+        }
         }
 
         // If no skilled moderator is found, assign to any admin.
         if (!assignedUser) {
-          assignedUser = await User.findOne({ role: "admin" });
+          const admins = await User.find({ role: "admin" });
+          if (admins.length > 0) {
+            // Pick a random admin from the list
+            assignedUser = admins[Math.floor(Math.random() * admins.length)];
+          }
         }
 
         updatePayload.assignedTo = assignedUser?._id || null;
@@ -62,9 +77,9 @@ export const onTicketCreated = inngest.createFunction(
       });
 
       await step.run("send-assignment-email", async () => {
-        if (moderator) {
+        if (assignee) {
           const subject = `New Ticket Assigned: "${ticket.title}"`;
-          const message = `Hi ${moderator.email},
+          const message = `Hi ${assignee.email},
 
 A new ticket has been assigned to you.
 
@@ -73,7 +88,7 @@ Priority: ${aiResponse?.priority || 'Not set'}
 AI Notes: ${aiResponse?.helpfulNotes || 'N/A'}
 
 Please log in to view the details.`;
-          await sendMail(moderator.email, subject, message);
+          await sendMail(assignee.email, subject, message);
         }
       });
 

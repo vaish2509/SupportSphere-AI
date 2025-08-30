@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 
 export default function AdminPanel() {
   const [users, setUsers] = useState([]);
-  const [filteredUsers, setFilteredUsers] = useState([]);
   const [editingUser, setEditingUser] = useState(null);
   const [formData, setFormData] = useState({ role: "", skills: "" });
   const [searchQuery, setSearchQuery] = useState("");
@@ -21,7 +20,6 @@ export default function AdminPanel() {
       const data = await res.json();
       if (res.ok) {
         setUsers(data);
-        setFilteredUsers(data);
       } else {
         setError(data.error || "Failed to fetch users");
       }
@@ -74,21 +72,26 @@ export default function AdminPanel() {
       }
       
       setSuccess("User updated successfully!");
+      // Instead of refetching all users, update the local state for a faster UI response.
+      const updatedSkills = formData.skills
+        .split(",")
+        .map((skill) => skill.trim())
+        .filter(Boolean);
+      setUsers((prevUsers) =>
+        prevUsers.map((u) =>
+          u.email === editingUser
+            ? { ...u, role: formData.role, skills: updatedSkills }
+            : u
+        )
+      );
       setEditingUser(null);
       setFormData({ role: "", skills: "" });
-      fetchUsers();
     } catch (err) {
       setError("Update failed");
     }
   };
 
-  const handleSearch = (e) => {
-    const query = e.target.value.toLowerCase();
-    setSearchQuery(query);
-    setFilteredUsers(
-      users.filter((user) => user.email.toLowerCase().includes(query))
-    );
-  };
+  const filteredUsers = users.filter((user) => user.email.toLowerCase().includes(searchQuery.toLowerCase()));
 
   return (
     <div className="max-w-4xl mx-auto mt-10 p-4">
@@ -102,7 +105,7 @@ export default function AdminPanel() {
         className="input input-bordered w-full mb-6"
         placeholder="Search by email"
         value={searchQuery}
-        onChange={handleSearch}
+        onChange={(e) => setSearchQuery(e.target.value)}
       />
       {filteredUsers.map((user) => (
         <div
