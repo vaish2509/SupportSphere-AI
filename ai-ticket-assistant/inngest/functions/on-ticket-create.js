@@ -5,6 +5,14 @@ import { NonRetriableError } from "inngest";
 import { sendMail } from "../../utils/mailer.js";
 import analyzeTicket from "../../utils/ai.js";
 
+// Helper function to select a random user from a list
+const getRandomUser = (users) => {
+  if (!users || users.length === 0) {
+    return null;
+  }
+  return users[Math.floor(Math.random() * users.length)];
+};
+
 export const onTicketCreated = inngest.createFunction(
   { id: "on-ticket-created", retries: 2 },
   { event: "ticket/created" },
@@ -50,24 +58,15 @@ export const onTicketCreated = inngest.createFunction(
               role: "moderator",
               skills: { $in: skillRegex },
             });
-            if (potentialModerators.length > 0) {
-              // Pick a random moderator from the list of those with matching skills
-              assignedUser =
-                potentialModerators[
-                  Math.floor(Math.random() * potentialModerators.length)
-                ];
-            }
+            assignedUser = getRandomUser(potentialModerators);
           }
-        }
         }
 
         // If no skilled moderator is found, assign to any admin.
         if (!assignedUser) {
           const admins = await User.find({ role: "admin" });
-          if (admins.length > 0) {
-            // Pick a random admin from the list
-            assignedUser = admins[Math.floor(Math.random() * admins.length)];
-          }
+          // Pick a random admin from the list
+          assignedUser = getRandomUser(admins);
         }
 
         updatePayload.assignedTo = assignedUser?._id || null;
