@@ -72,8 +72,5 @@ Follow these instructions to get a copy of the project up and running on your lo
 The frontend is intended to be deployed on **Vercel**, and the backend on **Render**.
 
 ### Production Links
-
-Once deployed, the production links will be added here:
-
-*   **Frontend (Vercel):** `[PASTE YOUR FRONTEND URL HERE]`
-*   **Backend (Render):** `[PASTE YOUR BACKEND URL HERE]`
+*   **Frontend (Vercel):** https://support-sphere-ai.vercel.app
+*   **Backend (Render):** https://supportsphere-ai-backend.onrender.com
